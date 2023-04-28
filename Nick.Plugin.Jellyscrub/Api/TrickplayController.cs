@@ -139,17 +139,23 @@ public class TrickplayController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
-    [Produces(MediaTypeNames.Application.Octet)]
+    [Produces(String)]
     public ActionResult GetBIF([FromRoute, Required] Guid itemId, [FromRoute, Required] int width)
     {
         var item = _libraryManager.GetItemById(itemId);
 
         if (item != null)
         {
-            var path = VideoProcessor.GetExistingBifPath(item, _fileSystem, width);
+            var path = VideoProcessor.GetExistingManifestPath(item, _fileSystem, width);
             if (path != null)
             {
-                return PhysicalFile(path, MediaTypeNames.Application.Octet);
+                string man = File.ReadAllText(@path);
+                dynamic stuff = JsonConvert.DeserializeObject(man);
+                if stuff.WidthResolutions.Contains(width)
+                {
+                    return man.WidthResolutions.width;
+                }
+
             }
             else if (_config.OnDemandGeneration && _config.WidthResolutions.Contains(width))
             {
